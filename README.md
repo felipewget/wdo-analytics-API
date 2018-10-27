@@ -17,4 +17,4 @@ This API is in development. Its will count on:
 
 ### br.advfn
 
-Information for updating the data comes from the ADVFN website, where ah the history of quotes from the mini dolar. Exemple: [link to Google!](https://br.advfn.com/bolsa-de-valores/bmf/WDOX18/historico)
+Information for updating the data comes from the ADVFN website, where ah the history of quotes from the mini dolar. Exemple: [link to ADVFN](https://br.advfn.com/bolsa-de-valores/bmf/WDOX18/historico)
