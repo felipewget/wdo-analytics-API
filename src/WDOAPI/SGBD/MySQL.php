@@ -20,7 +20,7 @@
 
 			if (!$this->conn) {
 			    echo "Error: " . mysqli_connect_error();
-				exit();
+				die();
 			}
 
 		}
@@ -34,6 +34,16 @@
 		public function execQuery( $sql ){
 
 			// Execute SQL
+			if(mysqli_query( $this->conn , $sql )){
+			    // echo "Records inserted successfully.";
+			    return [
+			    	'cod' => 200,
+			    ];
+			    
+			} else{
+			    echo "ERROR: Could not able to execute $sql. " . mysqli_error($this->conn);
+			    die();
+			}
 
 		}
 

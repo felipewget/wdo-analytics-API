@@ -7,7 +7,19 @@
 
 	$WDOAPI = new WDOAPI\WDOAPI( true );
 
-	// Exemple
-	$WDOAPI->updateData( '36' );
+	// Upload Investing Historical CSV
+	// $WDOAPI->updateHistoricalData( 'samples/usd_brl_Dados_historicos.csv' );
+
+	// Upload Investing Historical CSV
+	// $WDOAPI->updateHistoricalData( 'samples/usd_brl_Dados_historicos.csv' );	
+
+	// Dados para grafico de osc | Contador de Nivel das Oscilacoes por Niveis
+	// $data = $WDOAPI->countDaysByOsc( 18 );
+
+	// Dados para grafico de osc | Contador de Nivel das Oscilacoes por Niveis
+	// $data = $WDOAPI->countDaysByOscByPoints( 300 );
+
+	echo '<pre>';
+	print_r( $data );
 
 ?>

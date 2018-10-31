@@ -3,72 +3,59 @@
 	namespace WDOAPI;
 
 	use \Datetime;
-	use \WDOAPI\CURL\Advfn;
+	use \WDOAPI\Files\HistoricalData;
+	use \WDOAPI\SGBD\HistoricalDataDAO;
+	use \WDOAPI\DataInterface\HistoricalDataInterface;
 	
 	Class WDOAPI {
 
 		private $debug;
 
-		private $sgbd;
-
-		private $paperMounth = [
-			1  => 'WDOG',
-			2  => 'WDOH',
-			3  => 'WDOJ',
-			4  => 'WDOK',
-			5  => 'WDOM',
-			6  => 'WDON',
-			7  => 'WDOQ',
-			8  => 'WDOU',
-			9  => 'WDOV',
-			10 => 'WDOX',
-			11 => 'WDOZ',
-			12 => 'WDOF',
-		];
-
-		public function __construct( $debug = false ){
-			
+		public function __construct( $debug = false )
+		{
 			$this->debug = $debug;
+		}
+
+		// Historical Data
+		public function updateHistoricalData( $dirCSV )
+		{
+
+			set_time_limit( 0 );
+
+			$HistoricalData = new HistoricalData();
+			$HistoricalDataDAO = new HistoricalDataDAO();
+
+			$data = $HistoricalData->uploadFileCsv( $dirCSV );
+			$response = $HistoricalDataDAO->insertDataCSV( $data );
+
+			return $response;
 
 		}
 
-		public function updateData( $mount ){
+		public function countDaysByOsc( $pastDays = 30 , $dateTimestamp = "" ){
 
-			$dvfn = new Advfn();
+			$HistoricalDataDAO = new HistoricalDataDAO();
+			$HistoricalDataInterface = new HistoricalDataInterface();
 
-			for( $i = 0; $i <= $mount; $i++ ){
+			$data = $HistoricalDataDAO->countDaysByOsc( $pastDays );
+			$dataInterface = $HistoricalDataInterface->showDataByOscVar( $data );
 
-				$date = new DateTime();
-
-				if( $i > 0 ){
-					$date->modify('-' . $i . ' month');
-				}
-
-				$yearContract = $date->format('Y');
-				$monthContract = $date->format('m');
-
-				$date = $yearContract . "-" . $monthContract;
-				$contract = $this->paperMounth[ (int)$monthContract ] . $yearContract ;
-				$firstDayInMonth = date("Y-m-01", strtotime($date));
-				$lastDayInMonth = date("Y-m-t", strtotime($date));
-
-				// $rates = $dvfn->getRates( $contract, $firstDayInMonth, $lastDayInMonth );
-
-				// echo '<pre>';
-				// print_r($rates);
-
-				// die();
-				
-				if( $this->debug ){
-
-					echo 'Primeiro dia do Mes : '. $firstDayInMonth .' - Ultimo dia do Mes : '. $lastDayInMonth; 
-					echo '<br />';
-					echo $monthContract . '-' . $yearContract .' | ' . $this->paperMounth[ (int)$monthContract ] . $yearContract . '<hr />';
-				}
-
-			}
+			return $dataInterface;
 
 		}
+
+		public function countDaysByOscByPoints( $pastDays = 30 , $dateTimestamp = "" ){
+
+			$HistoricalDataDAO = new HistoricalDataDAO();
+			$HistoricalDataInterface = new HistoricalDataInterface();
+
+			$data = $HistoricalDataDAO->countDaysByOsc( $pastDays );
+			$dataInterface = $HistoricalDataInterface->showDataByOscPoints( $data );
+
+			return $dataInterface;
+
+		}
+
 
 	}
 

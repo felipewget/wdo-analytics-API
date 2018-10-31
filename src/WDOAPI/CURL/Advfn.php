@@ -23,6 +23,13 @@
 
 		}
 
+		public function updateHistoricalData( $dirCSV )
+		{
+
+			$dirCSV;
+
+		}
+
 		public function getRates( $contrato, $dateInit, $dateEnd ){
 
 			$link = "https://br.advfn.com/bolsa-de-valores/bmf/" . $contrato . "/historico/mais-dados-historicos";
