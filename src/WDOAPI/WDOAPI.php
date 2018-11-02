@@ -16,7 +16,8 @@
 			$this->debug = $debug;
 		}
 
-		// Historical Data
+		/* Historical Data */
+
 		public function updateHistoricalData( $dirCSV )
 		{
 
@@ -51,6 +52,18 @@
 
 			$data = $HistoricalDataDAO->countDaysByOsc( $pastDays );
 			$dataInterface = $HistoricalDataInterface->showDataByOscPoints( $data );
+
+			return $dataInterface;
+
+		}
+
+		public function countTypesRepeatByPeriodDay( $pastDays = 30 , $dateTimestamp = "" ){
+
+			$HistoricalDataDAO = new HistoricalDataDAO();
+			$HistoricalDataInterface = new HistoricalDataInterface();
+
+			$data = $HistoricalDataDAO->countDaysByOsc( $pastDays );
+			$dataInterface = $HistoricalDataInterface->showDataByTypesRepeat( $data );
 
 			return $dataInterface;
 

@@ -277,6 +277,79 @@
 
 		}
 
+		public function showDataByTypesRepeat( $datas ){
+
+			$days = 0;
+			$count = 0;
+			$auxType = "n.d.a";
+
+			$response = [
+				"title" => 'Vezes seguidas que um tipo de mercado se repete',
+				"days" => 0,
+				"data" => [
+					'1' => 0,
+					'2' => 0,
+					'3' => 0,
+					'4' => 0,
+					'5' => 0,
+					'6' => 0,
+					'7' => 0,
+					'8' => 0,
+					'9' => 0,
+					'10' => 0,
+					'11' => 0,
+					'12' => 0,
+					'13' => 0,
+					'14' => 0,
+					'15' => 0,
+					'16' => 0,
+					'17' => 0,
+					'more' => 0,
+				]
+			];
+
+			foreach( $datas as $data ){
+
+				// @TODO <-- PRA DEBUG
+				// echo $data['type'] . ' --- ' . $data['date'].'<br />'; 
+
+
+				if( $auxType == "n.d.a" ){
+					$auxType = $data["type"];
+				} else {
+
+					if( $auxType != $data["type"] ){
+
+						if( $count < 17){
+							$index = $count + 1;
+
+							// 1 == 1 dia de tendencia e mudou
+							$response["data"][$index]++;
+						} else {
+							$response["data"]["more"]++;
+						}
+
+						$count = 0;
+						$auxType = $data["type"];
+
+					} else {
+
+						$count++;
+
+					}
+
+				}
+
+				$days++;
+
+			}
+
+			$response['days'] = $days;
+
+			return $response;
+
+		}
+
 		
 	}
 
