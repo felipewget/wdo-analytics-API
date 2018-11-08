@@ -10,8 +10,8 @@
 
 		public function readFileCSV( $dirFile, $separator = "," ){
 
-			$file_lines = file( $dirFile );
-			
+			$file_lines = file( $dirFile );			
+
 			$lineData = [];
 
 			foreach ($file_lines as $line) {
