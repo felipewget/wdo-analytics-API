@@ -3,218 +3,274 @@
 	namespace WDOAPI;
 
 	use \Datetime;
+	use \Exception;
 
-	use \WDOAPI\Files\HistoricalData;
-	use \WDOAPI\Files\IntraDay;
+	use \WDOAPI\Models\HistoricalDataDAO;
 
-	use \WDOAPI\SGBD\IntraDayDAO;
-	use \WDOAPI\SGBD\HistoricalDataDAO;
+	use \WDOAPI\Services\Migrates\IntraDayMigrate;
+	use \WDOAPI\Services\Migrates\HistoricalDataMigrate;
+	use \WDOAPI\Services\BackTest\BackTestOperations;
+	use \WDOAPI\Services\Train\Train;
 
-	use \WDOAPI\DataInterface\HistoricalDataInterface;
-	use \WDOAPI\DataInterface\IntraDayInterface;
+	use \WDOAPI\Services\GraphicAnalysisNeurons\NivelOsc;
+	use \WDOAPI\Services\GraphicAnalysisNeurons\CandleOsc;
+	use \WDOAPI\Services\GraphicAnalysisNeurons\TiposDeCandlesRepetidos;
+	use \WDOAPI\Services\GraphicAnalysisNeurons\TiposDeTendenciaRepetidas;
+	use \WDOAPI\Services\GraphicAnalysisNeurons\GapAberturaOsc;
 
-	use \WDOAPI\Operations\PullBack;
-	use \WDOAPI\Operations\BackTest;
-	
+	/**
+	 *	Classe principal que contem todos os metodos da API
+	 *	@package 	WDOAPI
+	 *	@author 	Fe Oliveira<felipe.wget@gmail.com>
+	 *	@version 	1.0.0
+	 *	@copyright 	Felipe Rodrigues Oliveira | 2019
+	 */
 	Class WDOAPI {
 
-		private $debug;
 
-		public function __construct( $debug = false )
+		/**
+		 *	Carrega dependencias para execucao dos metodos
+		 *
+		 *	@param bool $longRequest Identifica se a requisicao e longa. E um booleano, se setado 
+		 *							 como "true", remove o limitador de tempo da requisicao
+		 *
+		 */
+		public function __construct( bool $longRequest = false )
 		{
-			$this->debug = $debug;
+
+			// Se for declarado como requisicao que demora para ter uma resposta, remove o limitador de tempo 
+			// da requisicao
+			if( $longRequest ){
+				set_time_limit( 0 );
+			}
+
 		}
 
-		// ---------------- //
-		// HISTORICAL DATA  //
-		// ---------------- //
 
-		public function updateHistoricalData( $dirCSV )
+		/**
+		 *	Atualiza ou Reseta e re-insere dados na tabela "intraday" de um arquivo de dados do grafico csv do Metatrader
+		 *
+		 *	@param 	string<path> $dir 		Diretorio onde esta o arquivo CSV exportado do MetaTrader
+		 *	@param 	bool 		 $truncate 	Se verdadeito, remove todos os registros da tabela antes de inserir os dados
+		 *	@return bool
+		 *	@todo 	Dados testados foram os candles em M5
+		 */
+		public function updateIntraDayData( $dir , $truncate = false )
+		{
+			return ( new IntraDayMigrate() )->migrateTable( $dir, $truncate );
+		}
+
+
+		/**
+		 *	Atualiza ou Reseta e re-insere dados na tabela "historical_data" de um arquivo de dados do grafico csv do Metatrader
+		 *
+		 *	@param 	string<path> $dir 		Diretorio onde esta o arquivo CSV exportado do MetaTrader
+		 *	@param 	bool 		 $truncate 	Se verdadeito, remove todos os registros da tabela antes de inserir os dados
+		 *	@return bool
+		 *	@todo 	Dados testados foram os candles em Daily
+		 */
+		public function updateHistoricalData( $dir , $truncate = false )
+		{
+			return ( new HistoricalDataMigrate() )->migrateTable( $dir, $truncate );
+		}
+
+
+
+		/**
+		 *	Verifica um cenario(setup de operacoes) fazendo operacoes e mostra o resultado
+		 *
+		 *	@param array<candles> $sgbdCandles	Candles ja filtrados entre data de inicio e data final
+		 *	@param array 		  $neurons 		Armazena os neuronios ativos e a configuracao dos mesmos para ver quando entrar em uma operacao
+		 *	@param array 		  $officeHour 	Horario e inicio das operacoes, por exemplo, as operacoes serao feitas apenas entre as 10 as 14 horas
+		 *	@param array 		  $operations 	Armazena dados de configuracao das operacoes, por exemplo: stopgain e stoplog
+		 *	@description Exemplo de configuracao:
+		 *
+		 * 	$neurons = [
+		 *		'candle_osc'			=> [
+		 *			'active'	=> true,
+		 *			'type'		=> 'max', // max|min
+		 *			'osc'		=> 0.05,
+		 *		],
+		 *		'nivel_osc'				=> [
+		 *			'active'	=> true,
+		 *			'osc'		=> 0.5,
+		 *		],
+		 *		'candles_repetidos'		=> [
+		 *			'active'	=> false,
+		 *			'n_candles'	=> 2,
+		 *		],
+		 *		'tendencias_repetidas'	=> [
+		 *			'active'	=> false,
+		 *			'n_days'	=> 2,
+		 *		],
+		 *	];
+		 *
+		 *	$officeHour = [
+		 *		'startAt'	=> '09:00:00',
+		 *		'finishAt'	=> '12:20:00'
+		 *	];
+		 *
+		 *	$operations = [
+		 *			'stop' => [
+		 *				'gain'	=> '10.5',
+		 *				'loss'	=> '20', //'loss'	=> '10.5',
+		 *			],
+		 *			'range_candle' => [
+		 *				'min'	=> 5,
+		 *				'max'	=> 100,
+		 *			],
+		 *			'pointsInEmoluments' => '0.5'
+		 *	];
+		 *
+		 *	@return array
+		 */
+		public function checkCenario( $sgbdCandles, $neurons, $officeHour, $operations )
+		{
+			return ( new BackTestOperations() )->checkCenario( $sgbdCandles, $neurons, $officeHour, $operations );
+		}
+
+
+		/**
+		 *	Lista registros de candles entre a data de inicio e a data final
+		 *
+		 *	@param date<Y-m-d> $startDate Data de inicio
+		 *	@param date<Y-m-d> $endDate   Data de final
+		 *	@return array
+		 */
+		public function listIntraDayData( $startDate, $endDate )
 		{
 
-			set_time_limit( 0 );
+			/**
+			 *	@var \WDOAPI\Models\HistoricalDataDAO $modelHistoricalDataDAO Armazena a model HistoricalDataDAO
+			 *	@var array 							  $response 			  Armazena os candles e retorna o resultado do metodo
+			 */
 
-			$HistoricalData = new HistoricalData();
-			$HistoricalDataDAO = new HistoricalDataDAO();
+			$response;
 
-			$data = $HistoricalData->uploadFileCsv( $dirCSV );
-			$response = $HistoricalDataDAO->insertDataCSV( $data );
+			$modelHistoricalDataDAO = new HistoricalDataDAO();
+			$response = $modelHistoricalDataDAO->listIntradayData( $startDate, $endDate );
 
 			return $response;
 
 		}
 
-		public function countDaysByOsc( $pastDays = 30 , $dateTimestamp = "" ){
 
-			$HistoricalDataDAO = new HistoricalDataDAO();
-			$HistoricalDataInterface = new HistoricalDataInterface();
-
-			$data = $HistoricalDataDAO->listHistoricalDataDays( $pastDays );
-			$dataInterface = $HistoricalDataInterface->showDataByOscVar( $data );
-
-			return $dataInterface;
-
-		}
-
-		public function countDaysByOscPerMaxAndMin( $pastDays = 30 , $dateTimestamp = "" ){
-
-			$HistoricalDataDAO = new HistoricalDataDAO();
-			$HistoricalDataInterface = new HistoricalDataInterface();
-
-			$data = $HistoricalDataDAO->listHistoricalDataDays( $pastDays );
-			$dataInterface = $HistoricalDataInterface->showDataByOscVarMinAndMaxOfDay( $data );
-
-			return $dataInterface;
-
-		}
-
-		public function countDaysByOscByPoints( $pastDays = 30 , $dateTimestamp = "" ){
-
-			$HistoricalDataDAO = new HistoricalDataDAO();
-			$HistoricalDataInterface = new HistoricalDataInterface();
-
-			$data = $HistoricalDataDAO->listHistoricalDataDays( $pastDays );
-			$dataInterface = $HistoricalDataInterface->showDataByOscPoints( $data );
-
-			return $dataInterface;
-
-		}
-
-		public function countTypesRepeatByPeriodDay( $pastDays = 30 , $dateTimestamp = "" ){
-
-			$HistoricalDataDAO = new HistoricalDataDAO();
-			$HistoricalDataInterface = new HistoricalDataInterface();
-
-			$data = $HistoricalDataDAO->listHistoricalDataDays( $pastDays );
-			$dataInterface = $HistoricalDataInterface->showDataByTypesRepeat( $data );
-
-			return $dataInterface;
-
-		}
-
-		// -------------- //
-		// INTRADAY DATA  //
-		// -------------- //
-
-		// Horarios de candles que mais retornam ao preco apos um minimo de X candles
-		// principais candles que tem um pullback apos alguns periodo
-		// Retracao
-		// Se o preco estiver a favor da retracao "retraction", considerar
-		public function mainCandlesOfDayThatHaveAPullbackAfterSomePeriod( $pastDays = 30 , $dateTimestamp = "", $minimunOfNumberOfCandles = 3, $maximunOfNumberOfCandles=500, $minOsc = 0, $minimumPoints=0 )
+		/**
+		 *	Treina multiplos cenarios e tras as melhores opcoes de acordo com as opcoes selecionadas
+		 *	- Faz combinacoes de Neuronios
+		 *	- Faz combinacoes de Tipos de Operacoes
+		 *
+		 *	@param array<candles> $sgbdCandles	  			Candles ja filtrados entre data de inicio e data final
+		 *	@param array 		  $configNeurons  			Armazena os neuronios ativos para gerar possiveis rotas de processamento
+		 *	@param array 		  $officeHour 	  			Horario e inicio das operacoes, por exemplo, as operacoes serao feitas 
+		 *													apenas entre as 10 as 14 horas
+		 *	@param array 		  $registersnumberInRank 	Ao final, mostra as melhores possibilidades, o numero de top resultados 
+		 *													e definido por este parametro
+		 *	@todo 	ESSE METODO E A IA, NAO DA PRA TODAR EM QUALQUER PC
+		 *	@return array
+		 */
+		public function train( $sgbdCandles, $configNeurons, $officeHour, $registersnumberInRank )
 		{
-
-			$IntraDayDAO = new IntraDayDAO();
-			$PullBack = new PullBack();
-
-			// Group, a cada 30 minutos e agrupa os pontos - Fazer
-			$data = $IntraDayDAO->listIntaDayDataDays( $pastDays );
-			$ret = $PullBack->testRetraction( $data, $minimunOfNumberOfCandles, $maximunOfNumberOfCandles, $minOsc, $minimumPoints );
-			return $ret;
-
+			return ( new Train() )->train( $sgbdCandles, $configNeurons, $officeHour, $registersnumberInRank );
 		}
 
-		public function mainCandlesOfDayThatHavePullbackPerOsc( $pastDays = 30 , $dateTimestamp = "", $minimunOfNumberOfCandles = 3, $maximunOfNumberOfCandles=500, $minimumPoints=0, $validarPelaSombra = 0 )
+
+		/**
+		 *	Treina multiplos cenarios e tras as melhores opcoes de acordo com as opcoes selecionadas
+		 *	- Faz combinacoes de Neuronios
+		 *
+		 *	@param array<candles> $sgbdCandles	  			Candles ja filtrados entre data de inicio e data final
+		 *	@param array 		  $configNeurons  			Armazena os neuronios ativos para gerar possiveis rotas de processamento
+		 *	@param array 		  $officeHour 	  			Horario e inicio das operacoes, por exemplo, as operacoes serao feitas 
+		 *													apenas entre as 10 as 14 horas
+		 *	@param array 		  $registersnumberInRank 	Ao final, mostra as melhores possibilidades, o numero de top resultados 
+		 *													e definido por este parametro
+		 *	@todo 	ESSE METODO E A IA, NAO DA PRA TODAR EM QUALQUER PC
+		 *	@return array
+		 */
+		public function trainNeurons( $sgbdCandles, $configNeurons, $officeHour, $registersnumberInRank )
 		{
-
-
-
-			$IntraDayDAO = new IntraDayDAO();
-			$PullBack = new PullBack();
-
-			// Group, a cada 30 minutos e agrupa os pontos - Fazer
-			$data = $IntraDayDAO->listIntaDayDataDays( $pastDays );
-			$ret = $PullBack->testRetractionByOsc( $data, $minimunOfNumberOfCandles, $maximunOfNumberOfCandles, $minimumPoints, $validarPelaSombra );
-			return $ret;
-
+			return ( new Train() )->trainNeurons( $sgbdCandles, $configNeurons, $officeHour, $registersnumberInRank );
 		}
 
-		public function updateIntradayData( $dirCSV )
+		
+		/**
+		 *	Recupera dados de quantidade de operacoes, quais operacoes e datas de operacoes por
+		 *	Nivel de OSC em relaxao a abertura do dia
+		 *
+		 *	@param 	array<candles> $sgdbArrCandles	Candles ja filtrados entre data de inicio e data final
+		 *	@param 	float 		   $osc 			Osc minima como 1.0 de osc em relaxao a abertura para fazer uma operacao
+		 *	@param 	string<hh:mm>  $startHour 		Hora inicial do em que comeca a verificar opercoes, ex: 09:00
+		 *	@param 	string<hh:mm>  $endHour	 		Hora final do em que termina as operacoes do dia, ex: 15:00
+		 *	@return array
+		 */
+		public function checkBasicDataAboutNivelOsc( $sgdbArrCandles, $osc, $startHour, $endHour )
 		{
-
-			set_time_limit( 0 );
-			ini_set('memory_limit', '-1');
-
-			$IntraDay = new IntraDay();
-			$IntraDayDAO = new IntraDayDAO();
-
-			$data = $IntraDay->uploadFileCsv( $dirCSV );
-			$response = $IntraDayDAO->insertDataCSV( $data );
-
-			return $response;
-
-		}
-
-		public function listPeriodDaysOsc( $pastDays = 30 , $dateTimestamp = "" ){
-
-			// GET DATA	
-			// $data;
-			// $response = $IntraDayDAO->
-
+			return ( new NivelOsc() )->check( $sgdbArrCandles, $osc, $startHour, $endHour );
 		}
 
 
-		// quais periodos do dia e qual osc estava
-		// quais periodos do dia ele estava a cima ou a abaixo da abertura
-		// listar graficos por dia
-
-		// ---- //
-		// NEWS //
-		// ---- //
-
-		public function updateEconomicCalendar( $dirCSV ){}
-		public function listNewsByPeriod( $pastDays = 30 , $dateTimestamp = "", $levelImportance= null ){}
-		// Noticias que mais surgiram efeitos no grafico ( $minutostempoApos = 5|10|15 )
-									// Por pais tambem
-									// Por horario do dia
-
-		// ---------------- //
-		// MANUAL BACKTEST  //
-		// ---------------- //
-
-		// $options = [
-		// 	'after_period_tendence_days' => 4,
-		// 	'operation_in' => [
-		// 		'type' => 'percentage',
-		// 		'value' => '2',
-		// 		'hour' => [
-		// 			'start' => '09:00',
-		// 			'finish' => '15:00',
-		// 		]
-		// 	],
-		// 	'stop_loss' => [
-		// 		'type' => 'percentage',
-		// 		'value' => '1.5'
-		// 	],
-		// 	'stop_gain' => [
-		// 		'type' => 'percentage',
-		// 		'value' => '1'
-		// 	],
-		// ];
-
-		public function manualBacktest( $pastDays = 30 , $options, $dateTimestamp = "" ){
-
-			$IntraDayDAO = new IntraDayDAO();
-			$BackTest = new BackTest();
-
-			// // Group, a cada 30 minutos e agrupa os pontos - Fazer
-			$data = $IntraDayDAO->listIntaDayDataDays( $pastDays );
-			$BackTest->backTestRetraction( $data );
-			// var_dump($data);
-			die();
-
-			// return $PullBack->testRetraction( $data, $minimunOfNumberOfCandles, $maximunOfNumberOfCandles, $minOsc );
-
-
+		/**
+		 *	Recupera dados de quantidade de operacoes, quais operacoes e datas de operacoes por
+		 *	Nivel de OSC em relaxao ao proprio candle, ex: o candle teve uma osc de 0.5 em relaxao a abertura
+		 *	do proprio candle
+		 *
+		 *	@param 	array<candles> $sgdbArrCandles	Candles ja filtrados entre data de inicio e data final
+		 *	@param 	float 		   $osc 			Osc minima|maxima como 1.0 de osc em relaxao a abertura do proprio candle
+		 *	@param 	string<hh:mm>  $startHour 		Hora inicial do em que comeca a verificar opercoes, ex: 09:00
+		 *	@param 	string<hh:mm>  $endHour	 		Hora final do em que termina as operacoes do dia, ex: 15:00
+		 *	@param 	string 		   type 			Valores "min" ou "max", minimo ou maximo de tal osc para ser valido
+		 *	@return array
+		 */
+		public function checkBasicDataAboutCandleOsc( $sgdbArrCandles, $osc, $type, $startHour, $endHour )
+		{
+			return ( new CandleOsc() )->check( $sgdbArrCandles, $osc, $type, $startHour, $endHour );
 		}
 
-		// ----------------- //
-		// IA SUPERVISIONADO //
-		// ----------------- //
+
+		/**
+		 *	Recupera dados de quantidade de operacoes, quais operacoes e datas de operacoes por
+		 *	numero de X candles de alta|baixa repetidas
+		 *
+		 *	@param 	array<candles> $sgdbArrCandles		Candles ja filtrados entre data de inicio e data final
+		 *	@param 	int 		   $nCandlesRepetidos 	Numero de candles repetidos para ser valido
+		 *	@param 	string<hh:mm>  $startHour	 		Hora inicial do em que comeca a verificar opercoes, ex: 09:00
+		 *	@param 	string<hh:mm>  $endHour	 			Hora final do em que termina as operacoes do dia, ex: 15:00
+		 *	@return array
+		 */
+		public function checkBasicDataAboutTiposDeCandlesRepetidos( $sgdbArrCandles, $nCandlesRepetidos, $startHour, $endHour )
+		{
+			return ( new TiposDeCandlesRepetidos() )->check( $sgdbArrCandles, $nCandlesRepetidos, $startHour, $endHour );
+		}
 
 
-		// ----------------- //
-		// IA AUTOMATIZADA //
-		// ----------------- //
+		/**
+		 *	Recupera dados de quantidade de operacoes, quais operacoes e datas de operacoes por
+		 *	numero de X tendencias de alta|baixa repetidas
+		 *
+		 *	@param 	array<candles> $sgdbArrCandles			Candles ja filtrados entre data de inicio e data final
+		 *	@param 	int 		   $nTendenciaDiaRepetidos 	Numero de dias com determinada tendencia repetida
+		 *	@param 	string<hh:mm>  $startHour	 			Hora inicial do em que comeca a verificar opercoes, ex: 09:00
+		 *	@param 	string<hh:mm>  $endHour	 				Hora final do em que termina as operacoes do dia, ex: 15:00
+		 *	@return array
+		 */
+		public function checkBasicDataAboutTiposDeTendenciaRepetidas( $sgdbArrCandles, $nTendenciaDiaRepetidos, $startHour, $endHour )
+		{
+			return ( new TiposDeTendenciaRepetidas() )->check( $sgdbArrCandles, $nTendenciaDiaRepetidos, $startHour, $endHour );
+		}
+
+
+		/**
+		 *	Recubera dados basicos de dias com uma % maxima ou minimo de GAP de abertura de mercado
+		 *
+		 *	@param 	array<candles> 	$sgdbArrCandles		Candles ja filtrados entre data de inicio e data final
+		 *	@param 	string<min|max>	$type 				Minimo|maximo de % no GAP de abertura do mercado
+		 *	@param 	float			$osc 				OSC minima em relaxao ao GAP de abertura
+		 */
+		public function checkBasicDataAboutGapAberturaOsc( $sgdbArrCandles, $osc, $type )
+		{
+			return ( new GapAberturaOsc() )->check( $sgdbArrCandles, $osc, $type );
+		}
 
 	}
 

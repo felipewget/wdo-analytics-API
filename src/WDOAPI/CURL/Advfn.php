@@ -2,6 +2,14 @@
 
 	namespace WDOAPI\CURL;
 
+	/**
+	 * 	Classe responsavel por executar acoes no site ADVFN, um site com historico de cotacoes
+	 *	@package 	WDOAPI\CURL;
+	 *	@author 	Fe Oliveira<felipe.wget@gmail.com>
+	 *	@version 	1.0.0
+	 *	@copyright 	Felipe Rodrigues Oliveira | 2019
+	 *	@todo 		Ainda nao esta sendo usado
+	 */
 	Class Advfn extends CURL {
 
 		public $month = [
@@ -19,17 +27,9 @@
 			'Dec' => '12',
 		];
 
-		public function __construct(){
-
-		}
-
-		public function updateHistoricalData( $dirCSV )
-		{
-
-			$dirCSV;
-
-		}
-
+		/**
+		 *	Pega historico de taxas dados de um contrato
+		 */
 		public function getRates( $contrato, $dateInit, $dateEnd ){
 
 			$link = "https://br.advfn.com/bolsa-de-valores/bmf/" . $contrato . "/historico/mais-dados-historicos";
@@ -46,6 +46,9 @@
 
 		}
 
+		/**
+		 *	Processa o HTML e obtem as taxas
+		 */
 		private function processRates( $html ){
 
 			$table = $this->cropHtml( $html, '<table class="histo-results">', '</table' );

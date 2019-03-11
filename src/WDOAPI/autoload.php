@@ -1,26 +1,31 @@
 <?php
+
+	include('Bootstrap/BaseGraphic.php');
+	include('Bootstrap/Operations.php');
 	
-	include('WDOAPI.php');
+	include('Services/GraphicAnalysisNeurons/CandleOsc.php');
+	include('Services/GraphicAnalysisNeurons/NivelOsc.php');
+	include('Services/GraphicAnalysisNeurons/TiposDeCandlesRepetidos.php');
+	include('Services/GraphicAnalysisNeurons/TiposDeTendenciaRepetidas.php');
+	include('Services/GraphicAnalysisNeurons/GapAberturaOsc.php');
 
-	include('DataInterface/IntraDayInterface.php');
-	include('DataInterface/HistoricalDataInterface.php');
+	include('Services/BackTest/BackTestOperations.php');
 
-	include('SGBD/Settings.php');
-	include('SGBD/MySQL.php');
-	include('SGBD/HistoricalDataDAO.php');
-	include('SGBD/IntraDayDAO.php');
+	include('Services/Train/Train.php');
+
+	include('Config/Settings.php');
+	include('Bootstrap/MySQL.php');
+	include('Bootstrap/MetatraderFiles.php');
+	
+	include('Services/Migrates/HistoricalDataMigrate.php');
+	include('Services/Migrates/IntraDayMigrate.php');	
+
+	include('Models/HistoricalDataDAO.php');
+	include('Models/IntraDayDAO.php');
 
 	include('CURL/CURL.php');
 	include('CURL/Advfn.php');
 
-	include('Files/Files.php');
-	include('Files/HistoricalData.php');
-	include('Files/IntraDay.php');
-
-	include('Operations/Operations.php');
-	include('Operations/BackTest.php');
-	include('Operations/PullBack.php');
-
-	
+	include('WDOAPI.php');	
 
 ?>

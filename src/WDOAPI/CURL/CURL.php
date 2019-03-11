@@ -2,12 +2,25 @@
 
 	namespace WDOAPI\CURL;
 
+	/**
+	 * 	Classe com metodos auxiliares para usar CURL em outras classes
+	 *	@package 	WDOAPI\CURL;
+	 *	@author 	Fe Oliveira<felipe.wget@gmail.com>
+	 *	@version 	1.0.0
+	 *	@copyright 	Felipe Rodrigues Oliveira | 2019
+	 *	@todo 		Estou na duvida se coloco na pasta de bootstrap ou utils... vou deixa-la por aqui pois 
+	 *				ainda nao esta sendo usada
+	 */
 	Class CURL {
 
-		public function __construct(){
 
-		}
-
+		/**
+		 *	Acessa um link via POST 
+		 *
+		 *	@param string 	$link 		Link a ser acessado
+		 *	@param array 	$arrParams 	Array de parametros que sao enviados ao acessar o link
+		 *	@return string
+		 */
 		public function postAccess( $link, $arrParams = "" ){
 
 			$fields_string = "";
@@ -41,6 +54,15 @@
 
 		}
 
+
+		/**
+		 *	Corta e recupera parte do HTML
+		 *
+		 *	@param string 	$code 		Codigo HTML
+		 *	@param string 	$start 		Comeco do codigo que sera cortado
+		 *	@param string 	$last 		Final do codigo que sera cortado
+		 *	@return string
+		 */
 		public function cropHtml( $code, $start, $last ){
 
 			$arrCode = explode( $start, $code );
@@ -55,6 +77,15 @@
 
 		}
 
+
+		/**
+		 *	Corta varios pedacos e recupera parte do HTMLs, percorrendo todos os elementos da pagina
+		 *
+		 *	@param string 	$code 		Codigo HTML
+		 *	@param string 	$start 		Comeco do codigo que sera cortado
+		 *	@param string 	$last 		Final do codigo que sera cortado
+		 *	@return string
+		 */
 		public function cropHtmlAndScroll( $code , $start, $last ){
 
 			$arrCode = explode( $start, $code );
