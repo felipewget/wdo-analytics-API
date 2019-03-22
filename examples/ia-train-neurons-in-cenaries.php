@@ -61,6 +61,12 @@
 				'min'	=> 0,
 				'max'	=> 1000,
 			],
+			'prevention_of_price_back' => [
+				'active' 		=> false,
+				'min_candle' 	=> 5,
+				'after_points' 	=> 10,
+				'get_out_at' 	=> 4,
+			],
 			'pointsInEmoluments' => '0.5'
 	];
 

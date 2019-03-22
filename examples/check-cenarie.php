@@ -3,7 +3,7 @@
 	/**
 	 *	Verifica um cenario especifico com uma configuracao de setup de opercoes
 	 *
-	 *	File: check-cenarie.php
+	 *	File: check-cenarie.php_check_syntax(filename)		
 	 *
 	 *	@var \WDOAPI\WDOAPI		$wdo 					Carrega a classe da API
 	 *	@var date<yyyy-mm-dd>	$startDate 				Data que comeca de contar os candles
@@ -25,21 +25,21 @@
 
 	$wdo 					= new \WDOAPI\WDOAPI( $longRequest = true );
 
-	$startDate				= '2017-10-01';
-	$endDate				= '2017-11-01';
+	$startDate				= '2019-03-01';
+	$endDate				= '2019-04-21';
 
 	$configNeurons			= [
 		'candle_osc'			=> [
 			'active'		=> true,
-			'type'			=> 'max',
-			'osc' 			=> 0.1, 
+			'type'			=> 'min',
+			'osc' 			=> 0.08, 
 		],
 	 	'nivel_osc'				=> [
-			'active'		=> true,
-			'osc' 			=> 0.1, 
+			'active'		=> false,
+			'osc' 			=> 0.2, 
 		],
 		'candles_repetidos'		=> [
-			'active'		=> true,
+			'active'		=> false,
 			'n_candles' 	=> 4,
 		],
 		'tendencias_repetidas'	=> [
@@ -49,23 +49,29 @@
 		'gap_abertura'			=> [
 			'active'		=> true,
 			'type'			=> 'max',
-			'osc' 			=> 0.19, 
+			'osc' 			=> 0.3, 
 		],
 	];
 
 	$officeHour = [
 			'startAt'	=> '09:00:00',
-			'finishAt'	=> '12:30:00'
+			'finishAt'	=> '17:00:00'
 	];
 
 	$configOperations = [
 			'stop' => [
 				'gain'	=> '20', // ou 0.5%
-				'loss'	=> '20',
+				'loss'	=> '15',
 			],
 			'range_candle' => [
 				'min'	=> 0,
 				'max'	=> 1000,
+			],
+			'prevention_of_price_back' => [
+				'active' 		=> true,
+				'min_candle' 	=> 5,
+				'after_points' 	=> 6,
+				'get_out_at' 	=> 4,
 			],
 			'pointsInEmoluments' => '0.5'
 	];
@@ -77,5 +83,7 @@
 	echo '<pre>';
 		print_r( $retorno );
 	echo '</pre>';
+
+	// criar moelo de operacoes que sai no preco apos num x de candles percorridos e esta em gain
 
 ?>

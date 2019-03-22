@@ -228,13 +228,42 @@
 
 									}
 
+									
+									// Prevensao se o preco voltar
+									if( $operations['prevention_of_price_back']['active'] === true ){
+
+										if( $checkCandleEmRelaxaoAbertura["op_retracao"] == "compra" ){
+
+											$afterPoints = $this->calculateTax( $candle->close, $operations['prevention_of_price_back']['after_points'], "sum", $openedCandle->open );
+											$getOutAt 	 = $this->calculateTax( $candle->close, $operations['prevention_of_price_back']['get_out_at'], "sum", $openedCandle->open );
+
+											$operations['prevention_of_price_back']['points_after_points'] 	= $afterPoints;
+											$operations['prevention_of_price_back']['points_get_out_at'] 	= $getOutAt;
+											$operations['prevention_of_price_back']['leave_the_operations'] = false;
+
+										} else if( $checkCandleEmRelaxaoAbertura["op_retracao"] == "venda" ){
+
+											// Se for venda, pega os pontos de venda, pois esses valores e pra evitar que o preco volta
+											$afterPoints = $this->calculateTax( $candle->close, $operations['prevention_of_price_back']['after_points'], "less", $openedCandle->open );
+											$getOutAt 	 = $this->calculateTax( $candle->close, $operations['prevention_of_price_back']['get_out_at'], "less", $openedCandle->open );
+
+											$operations['prevention_of_price_back']['points_after_points'] 	= $afterPoints;
+											$operations['prevention_of_price_back']['points_get_out_at'] 	= $getOutAt;
+											$operations['prevention_of_price_back']['leave_the_operations'] = false;
+
+										}
+
+									}
+
 									$this->openOperation( 	$candle,
 															$checkCandleEmRelaxaoAbertura["op_retracao"], 
 															$candle->close,
 															$taxStopLoss, 
 															$taxStopGain, 
 															$operations["range_candle"]["min"], 
-															$operations["range_candle"]["max"]	);
+															$operations["range_candle"]["max"],
+															$operations['prevention_of_price_back'],
+															$operations['pointsInEmoluments']	);
 
 								}
 

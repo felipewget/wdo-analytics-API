@@ -14,4 +14,12 @@
 	// Carrega API
 	$wdo = new \WDOAPI\WDOAPI();
 
+	// /**
+	//  *	@TODO criar um arquivo
+	//  */
+	// $file = 'samples/WDOJ19M5.csv';
+	// echo $wdo->updateIntraDayData( $file , $truncate = false );
+	// echo '--';
+
+
 ?>
