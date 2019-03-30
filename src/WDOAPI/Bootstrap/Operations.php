@@ -213,6 +213,7 @@
 
 									// Operacao indefinida pois o msm candle bateu o stoploss e stopgain
 									$observation = "Operacao indefinida pois o msm candle bateu o stoploss e stopgain";
+
 									if( $this->closeOperation( null, $openedOperation, $currentCandle, $observation ) ){
 										unset( $this->openOperations[$index] );
 									}
@@ -230,6 +231,8 @@
 										// Se for gain, ele pega os pontos do STOP GAIN, entao preciso ajusta-lo para 
 										// o preco do stoploss que eu defini
 										$this->openOperations[$index]["stop_gain"] = $this->openOperations[$index]["stop_loss"];
+										$openedOperation["stop_gain"] 			   = $this->openOperations[$index]["stop_loss"];
+
 										if( $this->closeOperation( "gain", $openedOperation, $currentCandle ) ){
 											unset( $this->openOperations[$index] );
 										}
@@ -275,6 +278,8 @@
 										// Se for gain, ele pega os pontos do STOP GAIN, entao preciso ajusta-lo para 
 										// o preco do stoploss que eu defini
 										$this->openOperations[$index]["stop_gain"] = $this->openOperations[$index]["stop_loss"];
+										$openedOperation["stop_gain"] 			   = $this->openOperations[$index]["stop_loss"];
+
 										if( $this->closeOperation( "gain", $openedOperation, $currentCandle ) ){
 											unset( $this->openOperations[$index] );
 										}

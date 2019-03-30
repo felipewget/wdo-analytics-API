@@ -26,8 +26,10 @@
 
 	$wdo 					= new \WDOAPI\WDOAPI( $longRequest = true );
 
-	$startDate				= '2017-08-01';
-	$endDate				= '2018-08-01';
+	// $startDate				= '2017-08-01';
+	// $endDate				= '2018-08-01';
+	$startDate				= '2019-03-01';
+	$endDate				= '2019-04-21';
 
 	$configNeurons			= [
 		'candle_osc'			=> [

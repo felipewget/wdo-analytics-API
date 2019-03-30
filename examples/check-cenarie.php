@@ -25,18 +25,18 @@
 
 	$wdo 					= new \WDOAPI\WDOAPI( $longRequest = true );
 
-	$startDate				= '2019-03-01';
-	$endDate				= '2019-04-21';
+	$startDate				= '2018-01-01';
+	$endDate				= '2018-12-21';
 
 	$configNeurons			= [
 		'candle_osc'			=> [
 			'active'		=> true,
 			'type'			=> 'min',
-			'osc' 			=> 0.08, 
+			'osc' 			=> 0.1, 
 		],
 	 	'nivel_osc'				=> [
 			'active'		=> false,
-			'osc' 			=> 0.2, 
+			'osc' 			=> 0.25, 
 		],
 		'candles_repetidos'		=> [
 			'active'		=> false,
@@ -48,8 +48,8 @@
 		],
 		'gap_abertura'			=> [
 			'active'		=> true,
-			'type'			=> 'max',
-			'osc' 			=> 0.3, 
+			'type'			=> 'min',
+			'osc' 			=> 0.1, 
 		],
 	];
 
@@ -61,16 +61,16 @@
 	$configOperations = [
 			'stop' => [
 				'gain'	=> '20', // ou 0.5%
-				'loss'	=> '15',
+				'loss'	=> '8',
 			],
 			'range_candle' => [
 				'min'	=> 0,
 				'max'	=> 1000,
 			],
 			'prevention_of_price_back' => [
-				'active' 		=> true,
+				'active' 		=> false,
 				'min_candle' 	=> 5,
-				'after_points' 	=> 6,
+				'after_points' 	=> 10,
 				'get_out_at' 	=> 4,
 			],
 			'pointsInEmoluments' => '0.5'
